@@ -156,6 +156,7 @@ apt-mark showauto           # packages pulled in as deps (what autoremove would 
 **apt-get -s install**: what would happen if I commit to install
 
 ## 05. The work of <span style="color:green">$apt install package</span>
+
 This is the flow:
 1. **Read config** from 
     * /etc/apt/apt.conf.d/
@@ -165,12 +166,99 @@ This is the flow:
     * /var/lib/apt/lists/ 
     * dpkg's status db.
 3. **Solve:** Pick the candidate (highest pin priority, then highest version), pull in Depends and Recommends, respect Conflicts/Breaks.
-4. **Fetch:** The download runs as the unprivileged _apt user <span style="color: red">(This is a deliberate privilege-drop, so a malicious server can't hit a root-level download bug)</span> into /var/cache/apt/archives/.
-5. Verify. Each downloaded .deb's size and SHA-256 must match its entry in the signed index. This is the actual authenticity gate.
+4. **Fetch:** The download runs as the unprivileged _apt user <span style="color: red">(Note: This is a deliberate privilege-drop, so a malicious server can't hit a root-level download bug)</span> into /var/cache/apt/archives/.
+5. **Verify:** Each downloaded .deb's size and SHA-256 must match its entry in the signed index. This is the actual authenticity gate.
 6. Run DPkg::Pre-Invoke hooks as root.
 7. Hand off to dpkg --unpack / --configure in the computed order.
 8. Run DPkg::Post-Invoke hooks as root.
 9. Record which packages were auto-installed into /var/lib/apt/extended_states (so autoremove knows what to clean up later).
 
+The step 5 us the main and only security. The package is trusted because the has it listed in an index that was cryptographically signed. But the .deb isn't signed rather the index that makes sure for it is.
 
-The verification in step 5 is the whole security story in one line: the package is trusted because its hash is listed in an index that was cryptographically signed. The .deb isn't signed — the index that vouches for it is.
+## 06. The Maintainer-script Lifecycle
+
+This part requires understanding or processing power of your brain rather than just keep it in your ROM.
+This is where each package goes through a list of script calls. This is the Key Sequence:
+
+```bash
+install :   "new preinst install → unpack → new postinst configure"
+upgrade :   "old prerm upgrade → new preinst upgrade → unpack → old postrm upgrade → 
+            conffile handling → new postinst configure"
+remove  :   "prerm remove → files deleted(conffiles kept) → postrm remove [state:rc]"
+purge   :   "conffiles deleted → postrm purge"
+```
+
+OKay now look at this table to know about the name of the packages' life-cycle scripts:
+
+|script|Meaning|Work/Purpose|
+|------|-------|------------|
+|preinst|pre-installation|Runs before the new package is unpacked|
+|postinst|post-installation|Runs after installation or configuration|
+|prerm|pre-removal|Runs before a package is removed or upgraded|
+|postrm|post-removal|Runs after package files are removedd after a purge|
+|unpack|unpacking|Extracts oackage files into the filesystem|
+|configure|configuration|Configures the installed packages|
+|conffiles|configuration files|Files that preserve user configuration|
+
+There are three sequences that a security person must endure:
+1. The old version's scripts run during an upgrade:
+
+        In upgrade part, we can see old pre-remove and old post pre-remove scripts execute. So an upgrade is partly running code from the version the machine is leaving, not directly to the new one. <span style="color:red">So we need to see that script for correctness and security forensics if that really needed.</span>
+2. Scripts must be Idempotent (Run multiple times)
+
+        Basically if an installation fails partway, the recovery command is the <span style="color:green">dpkg --configure -a</span> which re-runs the configuration step. So if the script isn't safe, this will corrupt the state on recovery. So what does a real maintainer do? They build the script around a <span style="color:green">case "$1" in … </span> switch to handle install, upgrade, abort-upgrade, failed upgrade, etc. The first <span style="color:green">case "$1"</span> tells the script which phase it's in.
+3. A path never goes missing mid upgrade 
+
+        dpkg unpacks the new file in a file.dpkg-new and then automatically renames it over the original. So yeah, where do /usr/sbin/sshd points? It's always on a complete working binary and there's no half written files in there. 
+
+### Important Knowledges
+A conffile is a config file the package registered for protection, so when we upgrade, conffile compares 3 things:
+1. The config as shipped in the old package
+2. The config as shipped in the new package
+3. The config as it exists on disk the moment the upgrade is starting.
+
+So if you never edited it: silently upgrades
+If you edited it: dpkg will stop and ask with a prompt
+```bash
+keep your version / install the maintainer's / show the diff
+```
+This is exactly why apt remove leaves the config alone. If you edit something, that is precious to linux and only apt purge can remove them.
+
+Also, removing a package doesn't fully remove it, after apt remove, the packade isin state rc or r=removed & c=conf-files (Means the dpkg -l will show the package has been removed but it's configuration files remain on the disk).
+* apt remove deletes the package without touching the state rc
+* apt purge removes all but not the data the program created at runtime like database and logs
+* everything will be removed if postrm script explicitly does.
+Three different meaning for the operations of "Gone for good." (Just a humor, please ignore)
+
+There are the two command to remove rc packages:
+```bash
+sudo apt purge whyManWhy
+sudo apt --purge remove $(dpkg --list | awk '$1 == "rc" {print $2}')
+```
+
+## 07. Dependecy Semantics
+
+During a source build, dpkg-shlibdeps reads each binary's ELF(Executable and Linkable Format) needed entries and fills in the righ library version automatically. But to know exactly what relationship fields guarantees.
+
+|Field|What it actually guarantees (This is important BTW)|
+|-----|---------------------------|
+|Depends|The dependency is configured before this package is configured. Says nothing about unpack order.|
+|Pre-Depends|The dependency is fully configured before this package is even unpacked. Only needed if preinst uses it. Policy wants this kept rare.|
+|Recommends|Installed by default by apt (skipped with --no-install-recommends). dpkg ignores it entirely.|
+|Suggests|Informational only; not installed by default.|
+|Breaks|This package can be unpacked while the broken one stays, but that one gets deconfigured. Typical: Breaks: foo (<< 2.0).|
+|Conflicts|The two are never unpacked at the same time.|
+|Replaces|May overwrite another package's files. Conflicts + Replaces together = full replacement.|
+|Provides|Satisfies a virtual dependency name (e.g. many mail servers Provide: mail-transport-agent).|
+
+Few notes here:
+* Depends doesn't control the unpacking order but configuration order
+* If there is something that needs to be present at unpack time you need preinst which will call it. <span style="color:red">**Depeneds is not enough.**</span> <span style="color:green">You'll need **Pre-Depends** for that.</span>
+```bash
+Depends: libc6 (>= 2.34), default-mta | mail-transport-agent
+```
+where | means "any of these alternatives, first one preferred," and version operators are << <= = >= >> 
+Note: the doubled <</>> for strictly-less/greater, because < and > alone are deprecated or not enough.
+
+## 08. Version comparison
+
