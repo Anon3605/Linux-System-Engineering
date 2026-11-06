@@ -441,7 +441,25 @@ Basically **Component** describe support and licensing, main and restricted are 
 
 Now comes the **Snaps** which is a seperate system with it's own trust chain. It works as store-signed assertions, where the snap-revision assertion carries a SHA3-SHA384 of the .snap. Some .debs like firefox since 22.04 are thin wrappers that install the snap.
 
-## 11. Build a Package
+## 11. Building a Package
+
+Yeah, there's two ways to build a package:
+* Toy Way
+* Distro Way
+
+**The Toy Way** : yeah man this is simple and pretty much you can do it by  your own, no worries. Stay in a staged directory containing a DEBIAN/ folder and run dpkg-deb --build. Wallah, done. This teaches the file format bruh, nothing else. This is not the way to create real packages.
+
+**The Distro Way**: You're done here bro, you're done. Let's stop joking and start working.
+Distro way is the source package, made of 3 parts, **Upstream Tarball (.orig.tar.*)**, **A debian/ dir** and **A Signed .dsc** describing both.
+
+Note: the debian/ directory is shipped under format 3.0 "quilt" as .debian.tar.xz, with all distro changes as quilt patches in debian/patches/
+
+The key files inside debian/:
+* control: one Source stanza plus one stanza per binary package it produces.
+* rules: a makefile, these days almost always just the one line dh $@ (which invokes the "debhelper" sequencer).
+* changelog: the version and target suite come from here, not from control. This surprises people.
+* copyright: machine-readable, DEP-5 format.
+* tests/control: autopkgtests, which gate migration out of -proposed.
 
 ## 12. Connection to IR (Incident Response)
 
