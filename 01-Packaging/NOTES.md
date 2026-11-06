@@ -238,7 +238,7 @@ sudo apt --purge remove $(dpkg --list | awk '$1 == "rc" {print $2}')
 
 ## 07. Dependecy Semantics
 
-During a source build, dpkg-shlibdeps reads each binary's ELF(Executable and Linkable Format) needed entries and fills in the righ library version automatically. But to know exactly what relationship fields guarantees.
+During a source build, dpkg-shlibdeps reads each binary's ELF(Executable and Linkable Format) needed entries and fills in the righ library version automatically. But to know exactly what relationship fields guarantees, see the table below:
 
 |Field|What it actually guarantees (This is important BTW)|
 |-----|---------------------------|
@@ -260,5 +260,189 @@ Depends: libc6 (>= 2.34), default-mta | mail-transport-agent
 where | means "any of these alternatives, first one preferred," and version operators are << <= = >= >> 
 Note: the doubled <</>> for strictly-less/greater, because < and > alone are deprecated or not enough.
 
-## 08. Version comparison
+### Practical Examples 01
+How do you inspect dependencies, metadata and actual control file?
+Here you go:
 
+<span style="color:green">**Note: If you get 1 as output, it means the return value is 1 and there's no output against the grep command. So don't worry.**</span>
+
+```bash
+# Inspect dependency relationships
+apt-cache depends nginx
+# Inspect package metadata
+apt show nginx
+# Inspect the actual control file
+mkdir -p /tmp/package-lab
+cd /tmp/package-lab
+apt download nginx
+dpkg-deb -I nginx_*.deb
+# extract the control metadata
+dpkg-deb -e nginx_*.deb control
+cat control
+```
+
+### Practical Example 02
+How do you observe the actual debian package relationships declared by the package's maintainer?
+Here you go again:
+
+#### Experiment 01 (Depends)
+```bash
+# Find the dependencies
+apt-cache depends nginx
+# Simulate the install
+apt install --simulate nginx
+# Inspect the configuration
+dpkg -l nginx
+dpkg -l libc6
+```
+
+#### Experiment 02 (Pre-Depends)
+```bash
+# Find packages declaring this relationship
+apt-cache show dpkg | grep -i Pre-Depends
+# Search the available package metadata
+apt-cache dumpavail | grep -B 10 -A 5 '^Pre-Depends:'
+```
+<span style="color:green">Observing Pre-Depends is stronger than observing Depends cause the prerequisite must be configured before the dependent package is unpacked. </span><span style="color:red">This is difficult to demonstrate safely with ordinary installations, so we'll build a custom package for it later.</span>
+
+#### Experiment 03 (Recommends)
+```bash
+# Just compare these 2 commands bruh, you'll find the recommends
+apt install --simulate python3
+apt install --simulate --no-install-recommends python3
+```
+<span style="color:red">Normally apt installs recommendations, but dpkg does not enforce them</span>
+
+#### Experiment 04 (Suggest)
+```bash
+# You may find suggest entries here
+apt-cache depends git
+# Then, notice that suggested packages are not automatically installed in simulation.
+apt install --simulate git
+```
+
+#### Experiment 05 (Breaks)
+```bash
+# This will find an actual package with a Breaks declaration.
+apt-cache show <package-name> | grep -i '^Breaks:'
+apt install --simulate <package-name>
+```
+Here is something I want to state clearly and this is interesting behaviour, the breaking package can be unpacked while the affected package remains unpacked, but if you want to configure the affected package, it'll never work in an incompatible state.
+
+#### Experiment 06 (Conflict)
+```bash
+# Inspect Command
+apt-cache show <package-name> | grep -i '^Conflicts:'
+# A real example to investigate is alternative mail-transfer-agent implementations.
+# Observe APT handling packages that cannot coexist.
+apt-cache show postfix | grep -E '^(Conflicts|Provides|Replaces):'
+```
+
+#### Experiment 07 (Replaces)
+```bash
+apt-cache show <package-name> | grep -i '^Replaces:'
+```
+Replaces permits file ownership replacement in specified circumstances. By itself it doesn't mean the other package must be removed.
+
+#### Experiment 08 (Provides)
+```bash
+apt-cache show postfix | grep -i '^Provides:'
+apt-cache show exim4-daemon-light | grep -i '^Provides:'
+apt-cache show mail-transport-agent
+# Research yourself, why do you expect me to feed you all?
+```
+
+## 08. Version comparison (Not SemVer)
+
+Debian versions follow the format <span style="color:green">**[epoch:]upstream-version[-devian-revision]**</span>, and they are not compared as strings and not as SemVer. dpkg has its own comparison algorithm:
+
+**First the example: 2:1.5.0-3ubuntu2**
+
+1. Epoch is compared at first. It's optional and default is 0. If upstream's versioning scheme changes in a way that would otherwise sort wrong, it'll jump the higher epoch (1:2.0 beats 9.9 because  for epoch 1>0, higher gets the prority). Lesson: Epochs isn't a software release number, it's a packaging-level ordering mechanism.
+
+2. The version string is non-digit and digit chunks, comparing each chunk appropriately (digits numerically, so 10 > 9; letters by a modified ASCII order).
+
+3. The character **~** sorts before everything, even "nothing." So 1.0~rc1 < 1.0. <span style="color:green">This is the magic or trick for pre-releases: 1.0~beta comes before 1.0 final.</span> 
+```bash
+2:1.5.0~beta1-1 #oldest
+2:1.5.0~rc1-1 #older
+2:1.5.0-1 #newest
+```
+
+Note: BTW, **SemVer** or **Semantic Versioning** is a standard way for numbering software release to communicate the nature of exact changes made from a version to the next one. Like 2.4.5 where we can label x.y.z where; 
+* X is major 
+* Y is minor 
+* Z is patch
+
+
+Ubuntu's version suffixes are a coded language, memorize these:
+|Suffix|Meaning|
+|------|-------|
+|-0ubuntu1|New upstream version that isn't in Debian.|
+|-1ubuntu1|An Ubuntu delta on top of Debian's -1.|
+|-1build1|A **no-change** rebuild (e.g. against a new library, but still source codes can be same).|
+|-1ubuntu0.24.04.1|The stable/security update pattern — sorts above -1 but below Debian's eventual -2.|
+
+That last pattern is the one we see on every security update, and the fact that it sorts cleanly between the original and the next Debian revision is why the whole update mechanism works without version collisions.
+
+## 09. The Archive trust Chain
+
+When apt installs a package, why do the distro trust it? And trust me, if you don't know cryptography then please learn it first. Atleast the basics, hashing, encoding, encryption-decryption and digital signature. Those will be enough. 
+
+4 major question from the security prespective:
+* Where does Ubuntu get its initial trusted keys?
+* How does Ubuntu decide which key is allowed to sign which repository?
+* How does APT verify that repository metadata hasn't been modified?
+* How does APT decide whether a cryptographic signing key is strong enough?
+We're going to find answers from the question above.
+
+![Relative](/01-Packaging/src/Diagram02.png)
+
+The root is the ubuntu-keyring package and this is installed in image. Even the ISO itself is signed using SHA256SUMS and it is verifiable. Here is the bootstrap problem (Which one is first? Chicken or the egg?): Trusting the keyring because we trust where the image is installed from. Ever heard of the Key-Rotation? It's basically mean shipping new keyring package through the old, still-trusted chain. The new Key arrives signed by the old one.
+
+In this era(October 2026), apt-key is dead, why? On Ubuntu 24.04+ sources live in the format called deb822 in /etc/apt/sources.list.d/ubuntu.sources and each with a Signed-By: line pointing at the specific keyring. That scopes a key to one source, PPA(Personal Package Archive) key which is a GPG(GNU Privacy Guard) and key X can sign PPA X's metadata and nothing else. <span style="color:red">**The old approach dumped keys into /etc/apt/trusted.gpg.d/, where they were trusted for every source. That globally trust is exactly why apt-key was deprecated, addind a third-party key shouldn't grant it authority over the entire system.**</span>
+
+InRelease is the clearsigned Release file(signature and content in one file). apt prefers it over the detached Release + Release.gpg pair because a single file can't race. There's no window where a mirror has updated one and no the others. apt splits the clearsigned file itself so it only ever parse signed bytes and requires a strong hash (SHA-256 or SHA-512); MD5 and SHA-1 in the indexes are legacy-only. It also parses gpgv's machine-readable status lines like <span style="color:green">GOODSIG, VALIDSIG, NO_PUBKEY</span> to decide which key actually signed it.
+
+Now we're going to talk about the 24.04 key strength policy which but, Edly really important. From apt 2.7.13, repos signatures must come from RSA>=2048, Ed25519 or Ed448 keys; 1024 bit RSA repo keys are no longer trusted and launchpad re-signed every PPA under 4096 bit keys. After pushback from people using NIST P-256 repository keys, elliptic-curve keys of 256 bits and up were restored. A later apt update for noble turned the remaining weak-key warnings into hard errors. Newer apt can even use Sequoia's sqv as its verifier instead of gpgv, but verify the current default with apt changelog apt before asserting anything finer-grained, since that's exactly the kind of detail that shifts between point releases.
+
+Still there are some points that this chain don't protects. A signature may prove who and what signed the repo but never when or why.
+
+Here we can see these:
+* Freshness: An attacker swho can intercept the traffic(for some reason you're using http, not https), can replay the old, validly signed Release to freeze in stale indexes and starve security updates. Here Ubuntu sets the Valid-Until in the repos. This is a network level attack that passes every signature check.
+* Upstream Intent: There is an CVE called CVE-2024-3094 which is xz backdoor, planted upstream, in release tarballs and faithfully signed and delivered by the build system. The chain delivers whatever the build infrastructure produced. Basically, **Signed != safe**.
+* Local Files: Running a command like dpkg -i ./packageName.deb or apt install ./packageName.deb on a file which is already downloaded performs no authenticiy check. The trust chain is a property of archives not for .deb file in general. 
+
+<span style="color:green">The archive key signs the index, the index hashes the packeges, apt checks both before dpkg starts to work witht he binaries. But once unpacked, the only per-file record left is an MD5 list that root can rewrite.</span>
+
+## 10. Ubuntu-specific machinery
+
+The archive has a structure:
+
+* Components
+* Pockets
+* Upload & Signing
+* Stable Release Updates (SRUs)
+* Phased
+* Snaps
+
+Basically **Component** describe support and licensing, main and restricted are Canonical supported where universe and multiverse are community maintaned  (Ubuntu Pro's ESM extends security coverage into universe).
+
+**Pockets** are the relesas channels like noble(the base release), -updates, -security, -proposed, -backports etc.
+
+**Uploads & Signing**  follow a model where launchpads accepts only signed sources uploads from authorized uploaders. and build the binary itself. So a developer's key authorized an upload into the build system. Still it never signs the .deb in the machine you install. A linux machine can never check the archive key. This is also exavtly the PPA works with their own per-PPA key.
+
+**Stable Release Updates (SRUs)** explains the question behind kept back. A fix lands in the -proposed, gets verified, ages, then moves to -update.
+```bash
+"-proposed ⟶ verify ⟶ aged ⟶ -update"
+```
+
+**Phased** is where we can see the growing percentage of machines after rolled out by SRUs and controlled by Phased-Update-Percantage in the index. apt decideds deterministically if the release is on the current wave. This is why, there is an output "deferred due to phasing," and  "kept back" usually means phasing, not a broken dependency on Ubuntu which are common misdiagnosis for beginners. 
+
+Now comes the **Snaps** which is a seperate system with it's own trust chain. It works as store-signed assertions, where the snap-revision assertion carries a SHA3-SHA384 of the .snap. Some .debs like firefox since 22.04 are thin wrappers that install the snap.
+
+## 11. Build a Package
+
+## 12. Connection to IR (Incident Response)
+
+## 13. Misconceptions
