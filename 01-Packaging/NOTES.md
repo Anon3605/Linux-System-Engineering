@@ -461,6 +461,49 @@ The key files inside debian/:
 * copyright: machine-readable, DEP-5 format.
 * tests/control: autopkgtests, which gate migration out of -proposed.
 
+The tooling chain here is:
+* dpkg-buildpackage drives the actual build
+* The dh sequesncer runs helpers that,
+    * install files
+    * flag conffiles
+    * compute shlib
+    * generate control data (final)
+    * md5sums
+* Building a real one happens in clean chroot using sbuild
+* The result policy checked by lintian
+* Pure security/reproducibility hygiene is caused by clean chroot
+
+If you want a clean machine, obviously you don't want to build your machine's stray state leaking into packages, do you?
+
 ## 12. Connection to IR (Incident Response)
 
+I have managed to intercept live attacks and this knowledge will always give you a head start. I'm not gonna lie about that. Here are some trips(without giving away the mechanism):
+
+* postinst backdoors: code that runs as root at install time.
+* APT::Update::Pre-Invoke persistence: This hook fires daily as root via apt-daily.timer. This works as a cronjob but not actually a cronjob but quite, sceduled and also priviledged.
+* dpkg-divert abuse: Basically you can divert the real binary so the upgrades never overwrite a trojaned replacement. The system will so called "updates" and yeah, the backdoor will survive.
+
+And for forensics? Yeah, you may know them already:
+* /var/log/dpkg.log ⟶ every unpack, configure, remove.
+* /var/log/apt/history.log ⟶ records the invoking sudo user.
+
+If you came knowing the cryptography, there's CIA, confidentiality, integrity and authenticity. So we can talk about integrity vs authenticity.
+You may know a hash proves integrity where the signature proves authenticity, but will it prove the intent? NO!
+
 ## 13. Misconceptions
+
+Yeah, if you or I, myself come into this point, that means this is a direct wrap-up, no shortcut. In this part, I'll rewind everything I learned or noted here.
+
+1. Each .deb is signed by its maintainer.
+2. HTTP is insecure; HTTPS protects the packages.
+3. Signed means safe.
+4. Signed-By sandboxes a third-party repo.
+5. Depends means installed first.
+6. Removing a package removes the package.
+
+Thinks again and read this sections title. Reason yourself from the docs, and try to research without AI, atleast have a strong foundation before having an assistant. 
+
+*Thank You for Reading.*\
+*Md. Arafat Sarkar*\
+*My Read Count: 4*\
+*(Maybe for editing or just practised again)*
