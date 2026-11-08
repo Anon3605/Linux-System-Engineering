@@ -11,6 +11,9 @@ ubuntu@UbuntuServer:~/pkglab$ grep -rnE 'Invoke|Pre-Install-Pkgs' /etc/apt/apt.c
 /etc/apt/apt.conf.d/20packagekit:10:APT::Update::Post-Invoke-Success {
 /etc/apt/apt.conf.d/20dbus:2:APT::Update::Post-Invoke-Success { "[ ! -f /var/run/dbus/system_bus_socket ] || /usr/bin/dbus-send --system --dest=org.debian.apt --type=signal /org/debian/apt org.debian.apt.CacheChanged || true"; };
 /etc/apt/apt.conf.d/20apt-esm-hook.conf:1:APT::Update::Pre-Invoke {
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ systemctl list-timers 'apt-*' 
 NEXT                        LEFT LAST                        PASSED UNIT                    ACTIVATES                
 Sun 2026-11-08 21:20:50 UTC  11h Sun 2026-11-08 06:42:30 UTC      - apt-daily.timer         apt-daily.service
@@ -18,6 +21,9 @@ Mon 2026-11-09 06:10:11 UTC  20h Sun 2026-11-08 06:42:42 UTC      - apt-daily-up
 
 2 timers listed.
 Pass --all to see loaded but inactive timers, too.
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ dpkg-divert --list 
 diversion of /lib/x86_64-linux-gnu/libhistory.so.8.2 to /lib/x86_64-linux-gnu/libhistory.so.8.2.usr-is-merged by libreadline8t64
 diversion of /usr/share/dict/words to /usr/share/dict/words.pre-dictionaries-common by dictionaries-common
@@ -39,21 +45,34 @@ diversion of /lib32 to /lib32.usr-is-merged by base-files
 diversion of /libo32 to /libo32.usr-is-merged by base-files
 diversion of /lib/x86_64-linux-gnu/libtirpc.so.3 to /lib/x86_64-linux-gnu/libtirpc.so.3.usr-is-merged by libtirpc3t64
 diversion of /lib/x86_64-linux-gnu/libtirpc.so.3.0.0 to /lib/x86_64-linux-gnu/libtirpc.so.3.0.0.usr-is-merged by libtirpc3t64
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ grep -n debsig /etc/dpkg/dpkg.cfg
 8:# Do not enable debsig-verify by default; since the distribution is not using
 9:# embedded signatures, debsig-verify would reject all packages.
 10:no-debsig
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ ls -l /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/ 2>&1
 ls: cannot access '/etc/apt/trusted.gpg': No such file or directory
 /etc/apt/trusted.gpg.d/:
 total 8
 -rw-r--r-- 1 root root 1165 Nov 28  2023 ubuntu-keyring-2012-cdimage.gpg
 -rw-r--r-- 1 root root 1167 Nov 28  2023 ubuntu-keyring-2018-archive.gpg
- 2 ubuntu@UbuntuServer:~/pkglab$ grep -rn -i signed-by /etc/apt/sources.list.d/ /etc/apt/sources.list 2>/dev/null
+ 2 
+```
+
+```bash
+ubuntu@UbuntuServer:~/pkglab$ grep -rn -i signed-by /etc/apt/sources.list.d/ /etc/apt/sources.list 2>/dev/null
 /etc/apt/sources.list.d/ubuntu.sources.curtin.orig:36:Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 /etc/apt/sources.list.d/ubuntu.sources.curtin.orig:44:Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 /etc/apt/sources.list.d/ubuntu.sources:5:Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
 /etc/apt/sources.list.d/ubuntu.sources:11:Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ apt-config dump | grep -i pubkey-algo
 APT::Key::Assert-Pubkey-Algo ">=rsa1024,ed25519,ed448,nistp256,nistp384,nistp512,brainpoolP256r1,brainpoolP320r1,brainpoolP384r1,brainpoolP512r1,secp256k1";
 APT::Key::Assert-Pubkey-Algo::Next ">=rsa2048,ed25519,ed448,nistp256,nistp384,nistp512";

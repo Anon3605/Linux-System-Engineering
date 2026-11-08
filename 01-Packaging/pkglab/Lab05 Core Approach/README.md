@@ -1,13 +1,40 @@
 ```bash
 ubuntu@UbuntuServer:~/pkglab$ mkdir -p ~/pkglab/src/pkglab-2.0/debian/source
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ cd ~/pkglab/src/pkglab-2.0
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ printf '#!/bin/sh\nexec /usr/games/cowsay "pkglab 2.0"\n' > pkglab
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ chmod 755 pkglab
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ echo 'mode=strict' > pkglab.conf
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ echo '3.0 (native)' > debian/source/format
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ printf '#!/usr/bin/make -f\n%%:\n\tdh $@\n' > debian/rules
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ chmod 755 debian/rules
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ printf 'pkglab usr/bin\npkglab.conf etc/pkglab\n' > debian/install
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ cat > debian/control <<'EOF'
 Source: pkglab
 Section: utils
@@ -23,6 +50,9 @@ Depends: ${misc:Depends}, cowsay
 Description: packaging lab
  Rebuilt the distro way, as a source package.
 EOF
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ cat > debian/changelog <<EOF
 pkglab (2.0) (./etc/os-release;echo"VERSION_CODENAME"); urgency=medium
 
@@ -30,6 +60,9 @@ pkglab (2.0) (./etc/os-release;echo"VERSION_CODENAME"); urgency=medium
 
  -- Lab <pkglab@test.test>  $(date -R)
 EOF          
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ dpkg-buildpackage -us -uc
 dpkg-buildpackage: info: source package pkglab
 dpkg-buildpackage: info: source version 2.0
@@ -70,12 +103,24 @@ dpkg-deb: building package 'pkglab' in '../pkglab_2.0_all.deb'.
 dpkg-genchanges: info: including full source code in upload
  dpkg-source --after-build .
 dpkg-buildpackage: info: full upload; Debian-native package (full source is included)
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ ls ..
 pkglab-2.0          pkglab_2.0_amd64.buildinfo  pkglab_2.0.dsc
 pkglab_2.0_all.deb  pkglab_2.0_amd64.changes    pkglab_2.0.tar.xz
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ dpkg-deb -R ../pkglab_2.0_all.deb ../x2
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ ls ../x2/DEBIAN
 conffiles  control  md5sums
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ lintian -i ../pkglab_2.0_*.changes
 N:
 E: pkglab: no-copyright-file
@@ -124,13 +169,35 @@ N:   Show-Always: no
 N:   Check: documentation/manual
 N:   Renamed from: binary-without-manpage
 N: 
- 2 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ cd ~/pkglab/src/pkglab-2.0
+ 2 
+```
+
+```bash
+ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ cd ~/pkglab/src/pkglab-2.0
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ nano debian/copyright
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ mkdir -p debian/man
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ nano debian/man/pkglab.1
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ nano debian/changelog
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ . /etc/os-release && echo "Anon3605"
 Anon3605
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ dpkg-buildpackage -us -uc
 dpkg-buildpackage: info: source package pkglab
 dpkg-buildpackage: info: source version 2.0
@@ -171,6 +238,9 @@ dpkg-deb: building package 'pkglab' in '../pkglab_2.0_all.deb'.
 dpkg-genchanges: info: including full source code in upload
  dpkg-source --after-build .
 dpkg-buildpackage: info: full upload; Debian-native package (full source is included)
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ lintian -i ../pkglab_2.0_*.changes
 N:
 W: pkglab: no-manual-page [usr/bin/pkglab]
@@ -195,5 +265,4 @@ N:   Show-Always: no
 N:   Check: documentation/manual
 N:   Renamed from: binary-without-manpage
 N: 
-ubuntu@UbuntuServer:~/pkglab/src/pkglab-2.0$ 
 ```

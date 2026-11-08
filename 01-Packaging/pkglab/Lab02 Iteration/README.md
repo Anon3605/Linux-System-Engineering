@@ -1,5 +1,8 @@
 ```bash
-buntu@UbuntuServer:~/pkglab$ mkdir -p ~/pkglab/build && cd ~/pkglab/build
+ubuntu@UbuntuServer:~/pkglab$ mkdir -p ~/pkglab/build && cd ~/pkglab/build
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ mkpkg()
 {                                                                
   local v=$1 d=pkglab_$1 s
@@ -22,10 +25,19 @@ EOF
   chmod 0755 "d"/DEBIAN/*inst"d"/DEBIAN/*rm "$d/usr/bin/pkglab"
   dpkg-deb --build --root-owner-group "$d" .
 }
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ mkpkg 1.0-1 'mode=strict'
 dpkg-deb: building package 'pkglab' in './pkglab_1.0-1_all.deb'.
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ mkpkg 1.1-1 'mode=strict log=verbose'
 dpkg-deb: building package 'pkglab' in './pkglab_1.1-1_all.deb'.
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ sudo dpkg -i pkglab_1.0-1_all.deb
 Selecting previously unselected package pkglab.
 (Reading database ... 211710 files and directories currently installed.)
@@ -47,6 +59,9 @@ Desired=Unknown/Install/Remove/Purge/Hold
 ||/ Name           Version      Architecture Description
 +++-==============-============-============-=================================
 iU  pkglab         1.0-1        all          packaging lab
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ sudo apt -f install
 Reading package lists... Done
 Building dependency tree... Done
@@ -74,6 +89,9 @@ Setting up pkglab (1.0-1) ...
 [trace] /var/lib/dpkg/info/pkglab.postinst configure 
 Processing triggers for man-db (2.12.0-4build2) ...
 needrestart is being skipped since dpkg has failed
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ pkglab && apt-mark showauto | grep cowsay echo 'mode=permissive' | sudo tee -a /etc/pkglab/pkglab.conf                                        
  ______________
 < pkglab 1.0-1 >
@@ -85,6 +103,9 @@ ubuntu@UbuntuServer:~/pkglab/build$ pkglab && apt-mark showauto | grep cowsay ec
                 ||     ||
 grep: echo: No such file or directory
 grep: mode=permissive: No such file or directory
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ sudo dpkg -i pkglab_1.1-1_all.deb
 (Reading database ... 211773 files and directories currently installed.)
 Preparing to unpack pkglab_1.1-1_all.deb ...
@@ -95,6 +116,9 @@ Unpacking pkglab (1.1-1) over (1.0-1) ...
 Setting up pkglab (1.1-1) ...
 Installing new version of config file /etc/pkglab/pkglab.conf ...
 [trace] /var/lib/dpkg/info/pkglab.postinst configure 1.0-1
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ sudo apt remove pkglab
 Reading package lists... Done
 Building dependency tree... Done
@@ -123,6 +147,9 @@ No containers need to be restarted.
 No user sessions are running outdated binaries.
 
 No VM guests are running outdated hypervisor (qemu) binaries on this host.
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ dpkg -l pkglab
 Desired=Unknown/Install/Remove/Purge/Hold
 | Status=Not/Inst/Conf-files/Unpacked/halF-conf/Half-inst/trig-aWait/Trig-pend
@@ -130,8 +157,14 @@ Desired=Unknown/Install/Remove/Purge/Hold
 ||/ Name           Version      Architecture Description
 +++-==============-============-============-=================================
 rc  pkglab         1.1-1        all          packaging lab
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ ls /etc/pkglab
 pkglab.conf
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ sudo apt purge pkglab
 Reading package lists... Done
 Building dependency tree... Done
@@ -147,9 +180,16 @@ Do you want to continue? [Y/n] Y
 (Reading database ... 211772 files and directories currently installed.)
 Purging configuration files for pkglab (1.1-1) ...
 [trace] /var/lib/dpkg/info/pkglab.postrm purge
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ ls /etc/pkglab
 ls: cannot access '/etc/pkglab': No such file or directory
- 2 ubuntu@UbuntuServer:~/pkglab/build$ sudo apt autoremove
+ 2 
+```
+
+```bash
+ubuntu@UbuntuServer:~/pkglab/build$ sudo apt autoremove
 Reading package lists... Done
 Building dependency tree... Done
 Reading state information... Done
@@ -161,6 +201,9 @@ Do you want to continue? [Y/n] Y
 (Reading database ... 211770 files and directories currently installed.)
 Removing cowsay (3.03+dfsg2-8) ...
 Processing triggers for man-db (2.12.0-4build2) ...
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/build$ grep pkglab /var/log/dpkg.log | tail -20; tail -25 /var/log/apt/history.log
 2026-11-08 09:14:43 configure pkglab:all 1.0-1 <none>
 2026-11-08 09:14:43 status unpacked pkglab:all 1.0-1
@@ -207,5 +250,4 @@ Commandline: apt autoremove
 Requested-By: ubuntu (1000)
 Remove: cowsay:amd64 (3.03+dfsg2-8)
 End-Date: 2026-11-08  09:16:58
-ubuntu@UbuntuServer:~/pkglab/build$ 
 ```

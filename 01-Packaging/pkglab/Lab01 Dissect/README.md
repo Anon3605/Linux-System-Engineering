@@ -2,12 +2,21 @@
 ubuntu@UbuntuServer:~/pkglab$ apt-get download passwd 
 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 passwd amd64 1:4.13+dfsg1-4ubuntu3.2 [845 kB]
 Fetched 845 kB in 1s (1,085 kB/s)
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ ls -la passwd_*.deb 
 -rw-r--r-- 1 ubuntu ubuntu 844580 Jun 14  2024 passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ ar t passwd_*.deb
 debian-binary
 control.tar.zst
 data.tar.zst
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -I passwd_*.deb
  new Debian package, version 2.0.
  size 844580 bytes: control archive=7915 bytes.
@@ -36,6 +45,9 @@ ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -I passwd_*.deb
   .
   Shadow passwords are supported.  See /usr/share/doc/passwd/README.Debian
  Original-Maintainer: Shadow package maintainers <pkg-shadow-devel@lists.alioth.debian.org>
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -c passwd_*.deb | awk '$1 ~ /[sS]/'
 -rwxr-sr-x root/shadow   72184 2024-05-30 14:52 ./usr/bin/chage
 -rwsr-xr-x root/root     72792 2024-05-30 14:52 ./usr/bin/chfn
@@ -43,6 +55,9 @@ ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -c passwd_*.deb | awk '$1 ~ /[sS]/'
 -rwxr-sr-x root/shadow   27152 2024-05-30 14:52 ./usr/bin/expiry
 -rwsr-xr-x root/root     76248 2024-05-30 14:52 ./usr/bin/gpasswd
 -rwsr-xr-x root/root     64152 2024-05-30 14:52 ./usr/bin/passwd
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ mkdir x && dpkg-deb -R passwd_*.deb x && ls -l x/DEBIAN
 total 44
 -rw-r--r-- 1 ubuntu ubuntu   111 May 30  2024 conffiles
@@ -52,6 +67,9 @@ total 44
 -rwxr-xr-x 1 ubuntu ubuntu   182 May 30  2024 postrm
 -rwxr-xr-x 1 ubuntu ubuntu   182 May 30  2024 preinst
 -rwxr-xr-x 1 ubuntu ubuntu   182 May 30  2024 prerm
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ for f in x/DEBIAN/*inst x/DEBIAN/*rm; do echo "== f";cat"f"; done 2>/dev/null
 == x/DEBIAN/postinst
 #!/bin/sh
@@ -112,9 +130,14 @@ set -e
 # Automatically added by dh_installdeb/13.14.1ubuntu5
 dpkg-maintscript-helper rm_conffile /etc/cron.daily/passwd 1:4.7-2\~ -- "$@"
 # End automatically added section
-ubuntu@UbuntuServer:~/pkglab$ diff <(sort x/DEBIAN/md5sums) <(sort /var/lib/dpkg/info/passwd.md5sums)
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ diff <(sort x/DEBIAN/md5sums) <(sort /var/lib/dpkg/info/passwd.md5sums) && echo "db copy matches"
 db copy matches
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ sed -n '/^Package: passwd$/,/^$/p' /var/lib/dpkg/status 
 Package: passwd
 Status: install ok installed
@@ -142,19 +165,33 @@ Description: change and administer password and group data
  Shadow passwords are supported.  See /usr/share/doc/passwd/README.Debian
 Homepage: https://github.com/shadow-maint/shadow
 Original-Maintainer: Shadow package maintainers <pkg-shadow-devel@lists.alioth.debian.org>
+```
 
+```bash
 ubuntu@UbuntuServer:~/pkglab$ apt-get download iputils-ping
 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 iputils-ping amd64 3:20240117-1ubuntu0.1 [44.6 kB]
 Fetched 44.6 kB in 2s (27.0 kB/s)                   
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ ls
 iputils-ping_3%3a20240117-1ubuntu0.1_amd64.deb  passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb  x
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -e iputils-ping_*.deb ping-ctl
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ grep -n -A3 setcap ping-ctl/postinst
 8:    if setcap cap_net_raw+ep $PROGRAM; then
 9-        chmod u-s $PROGRAM
 10-    fi
 11-fi
 
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab$ ls -la
 total 888
 drwxrwxr-x  4 ubuntu ubuntu   4096 Nov  8 09:04 .

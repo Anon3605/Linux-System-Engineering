@@ -1,5 +1,6 @@
 ```bash
-ubuntu@UbuntuServer:~/pkglab/chain$ verify_chain() {                              
+ubuntu@UbuntuServer:~/pkglab/chain$ verify_chain() 
+{                              
   local S=1P=2 A M K want fn sha
   A=$(dpkg --print-architecture)
   case $A in amd64|i386) M=http://archive.ubuntu.com/ubuntu ;; *) M=http://ports.ubuntu.com/ubuntu-ports ;; esac
@@ -23,14 +24,26 @@ GOODSIG' gpgv.out || { echo 'LINK 1 FAILED'; return 1; }
   curl -fsS -o "fn##*/""M/$fn" || return 1
   echo "$sha  ${fn##*/}" | sha256sum -c - || { echo 'LINK 3 FAILED'; return 1; }
 }
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ . /etc/os-release
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ verify_chain "$VERSION_CODENAME" passwd
 [GNUPG:] GOODSIG 871920D1991BC93C Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>
 [GNUPG:] VALIDSIG F6ECB3762474EDA9D21B7022871920D1991BC93C 2024-04-25 1714057881 0 4 0 1 10 00 F6ECB3762474EDA9D21B7022871920D1991BC93C
 
 Packages.xz: OK
 passwd_4.13+dfsg1-4ubuntu3_amd64.deb: OK
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ 
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ sed -n '1,/^MD5Sum:/p' Release 
 Origin: Ubuntu
 Label: Ubuntu
@@ -42,6 +55,9 @@ Architectures: amd64 arm64 armhf i386 ppc64el riscv64 s390x
 Components: main restricted universe multiverse
 Description: Ubuntu Noble 24.04
 MD5Sum:
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ gpg --show-keys /usr/share/keyrings/ubuntu-archive-keyring.gpg 
 pub   rsa4096 2012-05-11 [SC]
       790BC7277767219C42C86F933B4FE6ACC0B21F32
@@ -55,6 +71,9 @@ pub   rsa4096 2018-09-17 [SC]
       F6ECB3762474EDA9D21B7022871920D1991BC93C
 uid                      Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>
 
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ apt-cache policy passwd  
 passwd:
   Installed: 1:4.13+dfsg1-4ubuntu3.2
@@ -65,11 +84,17 @@ passwd:
         100 /var/lib/dpkg/status
      1:4.13+dfsg1-4ubuntu3 500
         500 http://archive.ubuntu.com/ubuntu noble/main amd64 Packages
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ verify_chain "$VERSION_CODENAME-updates" passwd
 [GNUPG:] GOODSIG 871920D1991BC93C Ubuntu Archive Automatic Signing Key (2018) <ftpmaster@ubuntu.com>
 [GNUPG:] VALIDSIG F6ECB3762474EDA9D21B7022871920D1991BC93C 2026-11-08 1794124226 0 4 0 1 10 00 F6ECB3762474EDA9D21B7022871920D1991BC93C
 Packages.xz: OK
 passwd_4.13+dfsg1-4ubuntu3.2_amd64.deb: OK
+```
+
+```bash
 ubuntu@UbuntuServer:~/pkglab/chain$ sha256sum passwd_*.deb ../passwd_*.deb  
 139b51228c8065eefa3051f649d8480eb986f1cf629448e49d2eaf9813318412  passwd_4.13+dfsg1-4ubuntu3.2_amd64.deb
 48c36fd38b43a074d746d88eb34808fc06129b9a8864a65f869fbf17639c42c9  passwd_4.13+dfsg1-4ubuntu3_amd64.deb
