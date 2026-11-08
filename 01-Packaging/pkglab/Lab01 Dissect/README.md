@@ -1,17 +1,14 @@
 ```bash
-ubuntu@UbuntuServer:~/pkglab$ apt-get download passwd
+ubuntu@UbuntuServer:~/pkglab$ apt-get download passwd 
 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 passwd amd64 1:4.13+dfsg1-4ubuntu3.2 [845 kB]
-Fetched 845 kB in 1s (997 kB/s)
-ubuntu@UbuntuServer:~/pkglab$ ls -la
-total 836
-drwxrwxr-x  2 ubuntu ubuntu   4096 Nov  8 06:58 .
-drwxr-x--- 17 ubuntu ubuntu   4096 Nov  8 06:09 ..
--rw-r--r--  1 ubuntu ubuntu 844580 Jun 14  2024 passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb
-ubuntu@UbuntuServer:~/pkglab$ ar t passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb 
+Fetched 845 kB in 1s (1,085 kB/s)
+ubuntu@UbuntuServer:~/pkglab$ ls -la passwd_*.deb 
+-rw-r--r-- 1 ubuntu ubuntu 844580 Jun 14  2024 passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb
+ubuntu@UbuntuServer:~/pkglab$ ar t passwd_*.deb
 debian-binary
 control.tar.zst
 data.tar.zst
-ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -I passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb 
+ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -I passwd_*.deb
  new Debian package, version 2.0.
  size 844580 bytes: control archive=7915 bytes.
      111 bytes,     6 lines      conffiles
@@ -39,26 +36,7 @@ ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -I passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64
   .
   Shadow passwords are supported.  See /usr/share/doc/passwd/README.Debian
  Original-Maintainer: Shadow package maintainers <pkg-shadow-devel@lists.alioth.debian.org>
-ubuntu@UbuntuServer:~/pkglab$ dpkg-deb --control passwd*.deb control 
-ubuntu@UbuntuServer:~/pkglab$ ls -la
-total 840
-drwxrwxr-x  3 ubuntu ubuntu   4096 Nov  8 07:00 .
-drwxr-x--- 17 ubuntu ubuntu   4096 Nov  8 06:09 ..
-drwxr-xr-x  2 ubuntu ubuntu   4096 May 30  2024 control
--rw-r--r--  1 ubuntu ubuntu 844580 Jun 14  2024 passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb
-ubuntu@UbuntuServer:~/pkglab$ ls -la control/
-total 52
-drwxr-xr-x 2 ubuntu ubuntu  4096 May 30  2024 .
-drwxrwxr-x 3 ubuntu ubuntu  4096 Nov  8 07:00 ..
--rw-r--r-- 1 ubuntu ubuntu   111 May 30  2024 conffiles
--rw-r--r-- 1 ubuntu ubuntu   799 May 30  2024 control
--rw-r--r-- 1 ubuntu ubuntu 19917 May 30  2024 md5sums
--rwxr-xr-x 1 ubuntu ubuntu  1148 May 30  2024 postinst
--rwxr-xr-x 1 ubuntu ubuntu   182 May 30  2024 postrm
--rwxr-xr-x 1 ubuntu ubuntu   182 May 30  2024 preinst
--rwxr-xr-x 1 ubuntu ubuntu   182 May 30  2024 prerm
-ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -c passwd_*.deb | awk '$1 ~ /[sS]/
-> '
+ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -c passwd_*.deb | awk '$1 ~ /[sS]/'
 -rwxr-sr-x root/shadow   72184 2024-05-30 14:52 ./usr/bin/chage
 -rwsr-xr-x root/root     72792 2024-05-30 14:52 ./usr/bin/chfn
 -rwsr-xr-x root/root     44760 2024-05-30 14:52 ./usr/bin/chsh
@@ -134,9 +112,10 @@ set -e
 # Automatically added by dh_installdeb/13.14.1ubuntu5
 dpkg-maintscript-helper rm_conffile /etc/cron.daily/passwd 1:4.7-2\~ -- "$@"
 # End automatically added section
+ubuntu@UbuntuServer:~/pkglab$ diff <(sort x/DEBIAN/md5sums) <(sort /var/lib/dpkg/info/passwd.md5sums)
 ubuntu@UbuntuServer:~/pkglab$ diff <(sort x/DEBIAN/md5sums) <(sort /var/lib/dpkg/info/passwd.md5sums) && echo "db copy matches"
 db copy matches
-ubuntu@UbuntuServer:~/pkglab$ sed -n '/^Package: passwd$/,/^$/p' /var/lib/dpkg/status
+ubuntu@UbuntuServer:~/pkglab$ sed -n '/^Package: passwd$/,/^$/p' /var/lib/dpkg/status 
 Package: passwd
 Status: install ok installed
 Priority: required
@@ -164,13 +143,24 @@ Description: change and administer password and group data
 Homepage: https://github.com/shadow-maint/shadow
 Original-Maintainer: Shadow package maintainers <pkg-shadow-devel@lists.alioth.debian.org>
 
-ubuntu@UbuntuServer:~/pkglab$ apt-get download iputils-ping && dpkg-deb -e iputils-ping_*.deb ping-ctl
-grep -n -A3 setcap ping-ctl/postinst
+ubuntu@UbuntuServer:~/pkglab$ apt-get download iputils-ping
 Get:1 http://archive.ubuntu.com/ubuntu noble-updates/main amd64 iputils-ping amd64 3:20240117-1ubuntu0.1 [44.6 kB]
-Fetched 44.6 kB in 1s (56.0 kB/s)       
+Fetched 44.6 kB in 2s (27.0 kB/s)                   
+ubuntu@UbuntuServer:~/pkglab$ ls
+iputils-ping_3%3a20240117-1ubuntu0.1_amd64.deb  passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb  x
+ubuntu@UbuntuServer:~/pkglab$ dpkg-deb -e iputils-ping_*.deb ping-ctl
+ubuntu@UbuntuServer:~/pkglab$ grep -n -A3 setcap ping-ctl/postinst
 8:    if setcap cap_net_raw+ep $PROGRAM; then
 9-        chmod u-s $PROGRAM
 10-    fi
 11-fi
-ubuntu@UbuntuServer:~/pkglab$ 
+
+ubuntu@UbuntuServer:~/pkglab$ ls -la
+total 888
+drwxrwxr-x  4 ubuntu ubuntu   4096 Nov  8 09:04 .
+drwxr-x--- 17 ubuntu ubuntu   4096 Nov  8 08:59 ..
+-rw-r--r--  1 ubuntu ubuntu  44584 Jul 24  2025 iputils-ping_3%3a20240117-1ubuntu0.1_amd64.deb
+-rw-r--r--  1 ubuntu ubuntu 844580 Jun 14  2024 passwd_1%3a4.13+dfsg1-4ubuntu3.2_amd64.deb
+drwxr-xr-x  2 ubuntu ubuntu   4096 Jul 24  2025 ping-ctl
+drwxr-xr-x  5 ubuntu ubuntu   4096 Nov  8 09:01 x
 ```
