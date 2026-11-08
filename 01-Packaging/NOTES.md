@@ -26,7 +26,12 @@ One is **dpkg** another is **apt**. We can say dpkg is the local installer which
 ## 02. The .deb file
 
 See the image that I created in Canva:
+
+<div align="center">
+
 ![Relative](/01-Packaging/src/Diagram.png)
+
+</div>
 
 We know about .zip, .rar, .tar files but **.deb** file is an **ar** archive file. 
 *ar archive file is an ancient UNIX archive format*
@@ -389,14 +394,19 @@ That last pattern is the one we see on every security update, and the fact that 
 
 When apt installs a package, why do the distro trust it? And trust me, if you don't know cryptography then please learn it first. Atleast the basics, hashing, encoding, encryption-decryption and digital signature. Those will be enough. 
 
+<div align="center">
+
+![Relative](/01-Packaging/src/Diagram02.png)
+
+</div>
+
+
 4 major question from the security prespective:
 * Where does Ubuntu get its initial trusted keys?
 * How does Ubuntu decide which key is allowed to sign which repository?
 * How does APT verify that repository metadata hasn't been modified?
 * How does APT decide whether a cryptographic signing key is strong enough?
 We're going to find answers from the question above.
-
-![Relative](/01-Packaging/src/Diagram02.png)
 
 The root is the ubuntu-keyring package and this is installed in image. Even the ISO itself is signed using SHA256SUMS and it is verifiable. Here is the bootstrap problem (Which one is first? Chicken or the egg?): Trusting the keyring because we trust where the image is installed from. Ever heard of the Key-Rotation? It's basically mean shipping new keyring package through the old, still-trusted chain. The new Key arrives signed by the old one.
 
